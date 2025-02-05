@@ -15,12 +15,12 @@ contract Lottery {
     uint public ticketSupply; // total num tickets for single lottery
     uint public ticketsSold; // track ticket sales
     LotteryTicket public tickets; // tickets are ERC20 tokens
-    uint public constant TICKET_PRICE = 0.01 ether; // Define ticket price in Wei
+    uint public constant TICKET_PRICE = 0.1 ether; // Define ticket price in Wei
 
     // Events
     event TicketSale(uint amount, address indexed buyer);
     event AllocationExhausted(uint indexed _lotteryId);
-    event WinnerDrawn(address indexed winnerAddress);
+    event WinnerDrawn(address indexed winnerAddress, uint ticketNumber);
     event FundsDistributed(address indexed recipientOfLotteryFunds);
 
     // Constructor
@@ -60,19 +60,23 @@ contract Lottery {
     }
 
     // Pick winner
-    function pickWinner() public onlyOwner() returns(address) {
+    function pickWinner(uint randomTicketNumber) public view onlyOwner() returns(address, uint) {
+        // Ensure all tickets sold
         require(allTicketsSold(), "Cannot call, tickets still remaining");
         
         // Generate a random ticket number
-        uint randomTicketNumber = (uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % ticketSupply) + 1;
-
+        // uint randomTicketNumber = (uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % ticketSupply) + 1;
+        // uint randomTicketTestCase = 501;
         // Find the winner based on the random ticket number
-        address winner = tickets.ticketOwners(randomTicketNumber); // Get the owner of the ticket number
+        address winner = tickets.returnTicketOwner(randomTicketNumber); // Get the owner of the ticket number
 
-        require(winner != address(0), "No winner found for this ticket number"); // Ensure there is a winner
+        require(isTicketHolder(winner), "Winner address must be ticket holder"); // Ensure there is a winner
 
-        emit WinnerDrawn(winner); // Emit event for winner
-        return winner;
+        return (winner, randomTicketNumber);
+    }
+
+    function callWinner(address winnerAddr, uint ticketNum) public onlyOwner{
+        emit WinnerDrawn(winnerAddr, ticketNum); // Emit event for winner
     }
 
     // Allocate funds
@@ -90,14 +94,49 @@ contract Lottery {
     }
 
     // Returns amount of tickets held by single address
-    function getTicketAmount(address searchAddr) public view returns(uint){
+    function getAddressTicketAmount(address searchAddr) public view returns(uint){
         require(isTicketHolder(searchAddr), "Address has not purchased ticket");
         return amountTicketsHeld[searchAddr];
+    }
+
+    // returning ERC20 token balance of user address
+    function getERC20Balance(address searchAddr) public view returns(uint){
+        return tickets.balanceOf(searchAddr);
+    }
+
+    // returning current token balance
+    function getContractTokenBalance() public view returns(uint256){
+        return tickets.balanceOf(address(this));
+    }
+
+    // returning contract eth balance
+    function getContractETHBalance() public view returns(uint){
+        return address(this).balance;
+    }
+
+    // returning remaining tickets
+    function getRemainingTickets() public view returns(uint256){
+        return ticketSupply - ticketsSold;
     }
 
     // Bool result for all tickets sold
     function allTicketsSold() public view returns(bool){
         return ticketsSold == ticketSupply;
+    }
+
+    // Return owners address
+    function getOwnerAddress() public view returns(address){
+        return owner;
+    }
+
+    // Get owners address of a ticket number
+    function returnTicketOwner(uint ticketNumber) public view returns(address){
+        return tickets.returnTicketOwner(ticketNumber);
+    }
+
+    // Return ticket supply number for random selection offchain
+    function getTicketSupply() public view returns(uint){
+        return ticketSupply;
     }
 
     // Allows contract to receive ether with no data.
