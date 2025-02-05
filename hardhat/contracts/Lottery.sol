@@ -18,10 +18,10 @@ contract Lottery {
     uint public constant TICKET_PRICE = 0.01 ether; // Define ticket price in Wei
 
     // Events
-    event TicketSale(uint, address indexed);
-    event AllocationExhausted(uint);
-    event WinnerDrawn(address indexed);
-    event FundsDistributed(address indexed);
+    event TicketSale(uint amount, address indexed buyer);
+    event AllocationExhausted(uint indexed _lotteryId);
+    event WinnerDrawn(address indexed winnerAddress);
+    event FundsDistributed(address indexed recipientOfLotteryFunds);
 
     // Constructor
     constructor(uint _ticketSupply, uint _lotteryId){
@@ -52,9 +52,28 @@ contract Lottery {
         // Transfer ticket tokens to purchasers address
         tickets.transfer(msg.sender, amount);
         emit TicketSale(amount, msg.sender);
+
+        // If all tickets now sold, emit event
+        if(allTicketsSold()){
+            emit AllocationExhausted(lotteryId);
+        }
     }
 
     // Pick winner
+    function pickWinner() public onlyOwner() returns(address) {
+        require(allTicketsSold(), "Cannot call, tickets still remaining");
+        
+        // Generate a random ticket number
+        uint randomTicketNumber = (uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % ticketSupply) + 1;
+
+        // Find the winner based on the random ticket number
+        address winner = tickets.ticketOwners(randomTicketNumber); // Get the owner of the ticket number
+
+        require(winner != address(0), "No winner found for this ticket number"); // Ensure there is a winner
+
+        emit WinnerDrawn(winner); // Emit event for winner
+        return winner;
+    }
 
     // Allocate funds
 
@@ -74,6 +93,11 @@ contract Lottery {
     function getTicketAmount(address searchAddr) public view returns(uint){
         require(isTicketHolder(searchAddr), "Address has not purchased ticket");
         return amountTicketsHeld[searchAddr];
+    }
+
+    // Bool result for all tickets sold
+    function allTicketsSold() public view returns(bool){
+        return ticketsSold == ticketSupply;
     }
 
     // Allows contract to receive ether with no data.
