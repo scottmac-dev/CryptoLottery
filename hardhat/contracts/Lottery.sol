@@ -4,18 +4,22 @@ pragma solidity ^0.8.28;
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
 import "./LotteryTicket.sol"; // Import the LotteryToken contract
+import "./LotteryFactory.sol"; // Import the LotteryFactory interface
 
 // Main lottery contract which stores data regarding lottery event.
 contract Lottery {
     // State variables
     uint public lotteryId; // this lotteries unique id for token verification
-    address public owner; // creator/admin address
+    address public immutable owner; // creator/admin address
     address[] public ticketHolders; // array of ticket holder addresses
+    address public tokensAddress;
     mapping(address => uint) public amountTicketsHeld; // map address to number of tickets
     uint public ticketSupply; // total num tickets for single lottery
     uint public ticketsSold; // track ticket sales
     LotteryTicket public tickets; // tickets are ERC20 tokens
-    uint public constant TICKET_PRICE = 0.1 ether; // Define ticket price in Wei
+    LotteryFactory public lotteryFactory; // Reference to the LotteryFactory contract
+    uint public ticketPrice; // ticket price in Wei
+    bool public winnerChosen;
 
     // Events
     event TicketSale(uint amount, address indexed buyer);
@@ -24,12 +28,15 @@ contract Lottery {
     event FundsDistributed(address indexed recipientOfLotteryFunds);
 
     // Constructor
-    constructor(uint _ticketSupply, uint _lotteryId){
+    constructor(uint _ticketSupply, uint _lotteryId, uint _ticketPrice, address factoryOwner){
         require(_ticketSupply > 0, "Ticket supply must be greater than zero"); // Ensure positive supply
         lotteryId = _lotteryId;
-        owner = msg.sender;
+        owner = factoryOwner;
         ticketSupply = _ticketSupply;
+        ticketPrice = _ticketPrice;
         tickets = new LotteryTicket(_ticketSupply, address(this), lotteryId); // tickets (tokens) init and minted to this contracts address
+        lotteryFactory = LotteryFactory(msg.sender); // Store the LotteryFactory address
+        tokensAddress = address(tickets);
     }
 
     // Buy ticket
@@ -37,8 +44,8 @@ contract Lottery {
         // Security checks
         require(ticketsSold < ticketSupply, "No tickets remaining"); // ensure supply not exhausted
         require(amount <= ticketSupply - ticketsSold, "Not enough tickets to fulfill purchase"); // ensure enough to fulfill order
-        require(msg.value == TICKET_PRICE * amount, "Incorrect payment amount"); // ensure correct payment
-        require(amount == uint(msg.value / TICKET_PRICE), "Must purchase whole tickets"); // ensure whole tickets only, no decimals
+        require(msg.value == ticketPrice * amount, "Incorrect payment amount"); // ensure correct payment
+        require(amount == uint(msg.value / ticketPrice), "Must purchase whole tickets"); // ensure whole tickets only, no decimals
         
         // Update state variables
         ticketsSold += amount;
@@ -63,11 +70,6 @@ contract Lottery {
     function pickWinner(uint randomTicketNumber) public view onlyOwner() returns(address, uint) {
         // Ensure all tickets sold
         require(allTicketsSold(), "Cannot call, tickets still remaining");
-        
-        // Generate a random ticket number
-        // uint randomTicketNumber = (uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % ticketSupply) + 1;
-        // uint randomTicketTestCase = 501;
-        // Find the winner based on the random ticket number
         address winner = tickets.returnTicketOwner(randomTicketNumber); // Get the owner of the ticket number
 
         require(isTicketHolder(winner), "Winner address must be ticket holder"); // Ensure there is a winner
@@ -75,8 +77,11 @@ contract Lottery {
         return (winner, randomTicketNumber);
     }
 
-    function callWinner(address winnerAddr, uint ticketNum) public onlyOwner{
+    function callWinner(address winnerAddr, uint ticketNum) public onlyOwner(){
+        require(allTicketsSold());
+        winnerChosen = true;
         emit WinnerDrawn(winnerAddr, ticketNum); // Emit event for winner
+        lotteryFactory.setLotteryWinState(lotteryId);
     }
 
     // Allocate funds
@@ -137,6 +142,18 @@ contract Lottery {
     // Return ticket supply number for random selection offchain
     function getTicketSupply() public view returns(uint){
         return ticketSupply;
+    }
+
+    function getTicketPrice() public view returns(uint) {
+        return ticketPrice;
+    }
+
+    function getTokensAddress() public view returns(address){
+        return tokensAddress;
+    }
+
+    function getLotteryId() public view returns(uint){
+        return lotteryId;
     }
 
     // Allows contract to receive ether with no data.

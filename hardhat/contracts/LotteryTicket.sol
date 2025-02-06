@@ -19,7 +19,7 @@ contract LotteryTicket is ERC20 {
     }
 
     // Custom override transfer to allow for unique ticketId to owner address mappings
-    function transfer(address to, uint256 amount) public override returns (bool){
+    function transfer(address to, uint256 amount) public override onlyLottery() returns (bool){
         require(amount > 0 && amount <= balanceOf(msg.sender), "Invalid transfer amount"); // validity check
         // Call parent transfer
         super.transfer(to, amount);

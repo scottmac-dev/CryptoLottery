@@ -10,10 +10,13 @@ describe("Lottery Contract Testing", function () {
     // Contracts are deployed using the first signer/account by default
     const signers = await ethers.getSigners();
     const owner = signers[0];
+    const ticketPrice = ethers.parseEther("0.1"); // Convert 0.1 Ether to wei
 
     const Lottery = await ethers.getContractFactory("Lottery");
-    const lottery = await Lottery.deploy(1000, 1);
+    const lottery = await Lottery.deploy(1000, 1, ticketPrice, owner.address);
     await lottery.waitForDeployment()
+
+
 
     console.log("Lottery contract deployed to ", lottery.target)
     console.log("Owners address should be ", owner.address)
@@ -147,7 +150,7 @@ describe("Lottery Contract Testing", function () {
       // console.log(returnedAddress);
       // console.log(buyer2.address);
 
-      console.log("Owner attempting to pick a winner...");
+    console.log("Owner attempting to pick a winner...");
      // Call pickWinner and capture the transaction response
      const winnerData = await lottery.connect(owner).pickWinner(randomTicketNumber);
      const winnerAddress = winnerData[0]; // Extracting the winner's address
@@ -178,9 +181,11 @@ describe("Testing with more buyers", function () {
     // Contracts are deployed using the first signer/account by default
     const signers = await ethers.getSigners();
     const owner = signers[0];
+    const ticketPrice = ethers.parseEther("0.1"); // Convert 0.1 Ether to wei
+
 
     const Lottery = await ethers.getContractFactory("Lottery");
-    const lottery = await Lottery.deploy(10, 1);
+    const lottery = await Lottery.deploy(10, 1, ticketPrice, owner.address);
     await lottery.waitForDeployment()
 
     console.log("Lottery contract deployed to ", lottery.target)
