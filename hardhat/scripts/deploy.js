@@ -8,7 +8,7 @@ async function main(){
     const LotteryFactory = await ethers.getContractFactory("LotteryFactory");
 
     // Init contact and deploy, await deployment success, log
-    const lotteryFactory = await LotteryFactory.deploy({gasLimit: 3000000});
+    const lotteryFactory = await LotteryFactory.deploy();
     await lotteryFactory.waitForDeployment()
     console.log("LotteryFactory deployed to ", lotteryFactory.target);
 
