@@ -1,4 +1,6 @@
 import React from 'react'
+import lotteryAbi from "../../utils/Lottery.json";
+import factoryAbi from "../../utils/LotteryFactory.json";
 
 function Home() {
   return (

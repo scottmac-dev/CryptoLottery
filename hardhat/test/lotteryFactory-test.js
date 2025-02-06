@@ -286,6 +286,7 @@ const {
         const amountToBePaid = (ticketPriceInt * ticketSupply1) * 0.95;
         const adminFee = (ticketPriceInt * ticketSupply1) - amountToBePaid;
 
+        console.log()
         console.log("Expected payout", amountToBePaid, "Admin fee", adminFee)
         const buyer1BalanceBefore = await ethers.provider.getBalance(buyer1.address);
         const buyer2BalanceBefore = await ethers.provider.getBalance(buyer2.address);
@@ -317,6 +318,7 @@ const {
         console.log("Buyer 2", b2aFormat);
         console.log("Owner (admin)", oaFormat);
 
+        console.log()
         console.log("Differences:")
         console.log("Buyer 1: +", b1aFormat - b1bFormat);
         console.log("Buyer 2: +", b2aFormat - b2bFormat);
