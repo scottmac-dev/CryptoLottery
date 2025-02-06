@@ -1,6 +1,8 @@
-const ethers = require("hardhat");
+const{ethers} = require("hardhat");
 
 async function main(){
+
+    console.log("Deploying contract....")
 
     // Get contracts for deployment
     const LotteryFactory = await ethers.getContractFactory("LotteryFactory");
@@ -18,4 +20,4 @@ main()
     .catch((error) => {
         console.error(error);
         process.exit(1);
-});
+    });

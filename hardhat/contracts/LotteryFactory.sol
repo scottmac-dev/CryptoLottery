@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 // Uncomment this line to use console.log
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import "./Lottery.sol"; // Import the LotteryToken contract
 
 // Lottery factory which will allow for the deployment of new lottery events.
@@ -42,7 +42,7 @@ contract LotteryFactory {
         return (idCounter, address(newLottery));
     }
 
-    function setLotteryWinState(uint _lotteryId) external {
+    function setLotteryWinState(uint _lotteryId) onlyChildren() external {
         deployedLotteries[_lotteryId].winnerAnnounced = true;
     }
 
@@ -61,6 +61,18 @@ contract LotteryFactory {
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call");
         _;
+    }
+
+    modifier onlyChildren() {
+        bool isChildContract;
+         for(uint i = 1; i <= idCounter; i++){
+            if(deployedLotteries[i].deployedToContract == msg.sender){
+                isChildContract = true;
+            }
+        }
+        require(isChildContract);
+        _;
+
     }
 }
 

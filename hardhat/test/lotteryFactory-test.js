@@ -228,6 +228,9 @@ const {
         await lottery1Contract.connect(owner).callWinner(winnerAddress, ticketNumber);
         const confirmedStructAfter = await lotteryFactory.getLotteryById(id);
 
+        // console.log(confirmedStructBefore);
+        // console.log(confirmedStructAfter);
+
         assert(confirmedStructBefore[2] == false);
         assert(confirmedStructAfter[2] == true);
       });
