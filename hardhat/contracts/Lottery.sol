@@ -67,7 +67,7 @@ contract Lottery {
     }
 
     // Pick winner
-    function pickWinner(uint randomTicketNumber) public view onlyOwner() returns(address, uint) {
+    function pickWinner(uint randomTicketNumber) external view onlyOwner() returns(address, uint) {
         // Ensure all tickets sold
         require(allTicketsSold(), "Cannot call, tickets still remaining");
         address winner = tickets.returnTicketOwner(randomTicketNumber); // Get the owner of the ticket number
@@ -77,14 +77,29 @@ contract Lottery {
         return (winner, randomTicketNumber);
     }
 
-    function callWinner(address winnerAddr, uint ticketNum) public onlyOwner(){
-        require(allTicketsSold());
+    function callWinner(address winnerAddr, uint ticketNum) external onlyOwner(){
+        require(allTicketsSold(), "Cannot call while tickets outstanding");
         winnerChosen = true;
         emit WinnerDrawn(winnerAddr, ticketNum); // Emit event for winner
         lotteryFactory.setLotteryWinState(lotteryId);
     }
 
     // Allocate funds
+    function allocateFunds(address winnerAddr) external onlyOwner() payable{
+        // Verify checks
+        require(allTicketsSold(), "Cannot call while tickets outstanding");
+        require(winnerChosen, "Cannot allocate before winner is picked");
+
+        // Get contract balance and establish payable amount and admin fee
+        uint256 contractBalance = address(this).balance; // Get the contract's ETH balance
+        uint256 winnerAmount = (contractBalance * 95) / 100; // Calculate 95% for the winner
+        uint256 adminAmount = contractBalance - winnerAmount; // Remaining 5% for the owner
+
+        payable(winnerAddr).transfer(winnerAmount); // Send 95% to the winner
+        payable(owner).transfer(adminAmount); // Send 5% to the owner
+
+        emit FundsDistributed(winnerAddr); // Emit event for funds distribution
+    }
 
     // Query functions
     // Bool result for address having purchased a ticket

@@ -231,6 +231,107 @@ const {
         assert(confirmedStructBefore[2] == false);
         assert(confirmedStructAfter[2] == true);
       });
+
+      it("Should distribute Lottery ETH balance to winner and pay admin fee", async function () {
+        const {lotteryFactory, signers, owner} = await loadFixture(deployLotteryFactoryFixture);
+        const ticketPrice1 = ethers.parseEther("1.0");
+        const ticketPriceInt = parseInt(ticketPrice1.toString())
+        const ticketSupply1 = 10;
+        await lotteryFactory.createNewLottery(ticketSupply1, ticketPrice1);        
+        const lottery1Struct = await lotteryFactory.getLotteryById(1);
+        const lottery1Addr = lottery1Struct[1];
+
+        const lottery1Contract = await ethers.getContractAt("Lottery", lottery1Addr);
+        // Buyers to interact
+        const buyer1 = signers[1];
+        const buyer2 = signers[2];
+        const amountToBuy1 = 5;
+        // Buyers purchases tickets
+        console.log("Buyer 1 purchasing half of tickets....")
+        const tx = await lottery1Contract.connect(buyer1).buyTicket(amountToBuy1, { value: ethers.parseEther("5.0") });
+        await tx.wait(); // Wait for the transaction to be mined
+
+        console.log("Buyer 2 purchasing half of tickets....")
+        const tx2 = await lottery1Contract.connect(buyer2).buyTicket(amountToBuy1, { value: ethers.parseEther("5.0") });
+        await tx2.wait(); // Wait for the transaction to be mined
+
+        console.log("Calling pick winner funtion with owner acc...")
+         // First generate random ticket num between 1 and maxTicketSupply
+        const maxTicketSupply1 = await lottery1Contract.getTicketSupply();
+        const randomTicketNumber1 = Math.floor(Number(maxTicketSupply1) * Math.random()) + 1;
+        console.log("Random ticket number lottery ",randomTicketNumber1);
+
+         //  Call pickWinner and capture the transaction response
+        const winnerData1 = await lottery1Contract.connect(owner).pickWinner(randomTicketNumber1);
+        const winnerAddress = winnerData1[0]; // Extracting the winner's address
+        const ticketNumber = winnerData1[1]; // Extracting the ticket number
+        if (winnerAddress == buyer1.address){
+            console.log("Winner address buyer 1, Ticket Number:", Number(ticketNumber));
+        }
+        if (winnerAddress == buyer2.address){
+            console.log("Winner address buyer 2, Ticket Number:", Number(ticketNumber));
+        }
+
+        // Call winner function to emit event and change state
+        let id = await lottery1Contract.getLotteryId();
+        const confirmedStructBefore = await lotteryFactory.getLotteryById(id);
+        await lottery1Contract.connect(owner).callWinner(winnerAddress, ticketNumber);
+        const confirmedStructAfter = await lotteryFactory.getLotteryById(id);
+
+        assert(confirmedStructBefore[2] == false);
+        assert(confirmedStructAfter[2] == true);
+
+        console.log("Calling allocate funds function to pay out lottery funds to winner");
+
+        const amountToBePaid = (ticketPriceInt * ticketSupply1) * 0.95;
+        const adminFee = (ticketPriceInt * ticketSupply1) - amountToBePaid;
+
+        console.log("Expected payout", amountToBePaid, "Admin fee", adminFee)
+        const buyer1BalanceBefore = await ethers.provider.getBalance(buyer1.address);
+        const buyer2BalanceBefore = await ethers.provider.getBalance(buyer2.address);
+        const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+
+        const b1bFormat = ethers.formatEther(buyer1BalanceBefore)
+        const b2bFormat = ethers.formatEther(buyer2BalanceBefore)
+        const obFormat = ethers.formatEther(ownerBalanceBefore)
+
+        console.log()
+        console.log("Before allocation balances:")
+        console.log("Buyer 1", b1bFormat);
+        console.log("Buyer 2", b2bFormat);
+        console.log("Owner (admin)", obFormat);
+        // // Call allocate funds
+        await lottery1Contract.connect(owner).allocateFunds(winnerAddress);
+
+        const buyer1BalanceAfter = await ethers.provider.getBalance(buyer1.address);
+        const buyer2BalanceAfter  = await ethers.provider.getBalance(buyer2.address);
+        const ownerBalanceAfter  = await ethers.provider.getBalance(owner.address);
+
+        const b1aFormat = ethers.formatEther(buyer1BalanceAfter)
+        const b2aFormat = ethers.formatEther(buyer2BalanceAfter)
+        const oaFormat = ethers.formatEther(ownerBalanceAfter)
+
+        console.log()
+        console.log("After allocation balances:")
+        console.log("Buyer 1", b1aFormat);
+        console.log("Buyer 2", b2aFormat);
+        console.log("Owner (admin)", oaFormat);
+
+        console.log("Differences:")
+        console.log("Buyer 1: +", b1aFormat - b1bFormat);
+        console.log("Buyer 2: +", b2aFormat - b2bFormat);
+        console.log("Owner (admin): +", oaFormat - obFormat);
+
+        if (winnerAddress == buyer1.address){
+            assert(amountToBePaid == buyer1BalanceAfter - buyer1BalanceBefore)
+        }
+        else if (winnerAddress == buyer2.address){
+            assert(amountToBePaid == buyer2BalanceAfter - buyer2BalanceBefore)
+        }
+
+        // assert(ownerBalanceAfter == ownerBalanceBefore + adminFee);
+
+      });
     });
   });
   
