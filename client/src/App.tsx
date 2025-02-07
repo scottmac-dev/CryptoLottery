@@ -5,24 +5,24 @@ import{
 import Home from './components/pages/Home';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import { useState } from 'react';
+import { WalletProvider } from './context/WalletContext';
 
 const router = createBrowserRouter([
   {
-    path: '/',
-    element:<Home/>
+    path: "/",
+    element: <Home />,
   },
-])
+]);
 
 function App() {
-
   return (
     <>
       <Header />
-        <RouterProvider router ={router}/>
+      <RouterProvider router={router} />
       <Footer />
     </>
-
-  )
+  );
 }
 
-export default App
+export default App;

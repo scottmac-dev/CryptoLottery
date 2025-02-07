@@ -1,14 +1,15 @@
-import React from 'react'
-import lotteryAbi from "../../utils/Lottery.json";
-import factoryAbi from "../../utils/LotteryFactory.json";
+import { useWallet } from "@/context/WalletContext";
+import AccountCard from "../customUI/AccountCard";
 
 function Home() {
+  const { account } = useWallet();
+
   return (
-    <div className='flex bg-beige'>
-        <h1>Test</h1>
-      
+    <div className="flex flex-col min-h-screen bg-basic items-center">
+      {account ? <p className="text-xl">Welcome, {account}</p> : <p className="text-xl">Please connect your wallet.</p>}
+      <AccountCard />
     </div>
-  )
+  );
 }
 
-export default Home
+export default Home;

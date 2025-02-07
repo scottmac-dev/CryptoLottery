@@ -82,12 +82,20 @@
   }
 }
 
-.bg-beige{
-  background-color: #FEEDD3 ;
-}
-
 .font-tech {
   font-family: "Share Tech Mono", serif;
   font-weight: 400;
   font-style: normal;
+}
+
+.bg-basic {
+  background-color: #F7F9FC ;
+}
+
+.bg-call {
+  background-color: #4CAF50 ;
+}
+
+.text-basic {
+  font-style: #F7F9FC ;
 }
