@@ -88,8 +88,21 @@
   font-style: normal;
 }
 
+.font-roboto {
+    font-family: "Roboto", serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+    font-variation-settings:
+      "wdth" 100;
+}
+
 .bg-basic {
   background-color: #F7F9FC ;
+}
+
+.text-basic{
+  color: #F7F9FC;
 }
 
 .bg-call {
