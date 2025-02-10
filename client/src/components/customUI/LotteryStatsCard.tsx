@@ -12,7 +12,7 @@ interface Lottery {
   createdAt: number;
 }
 
-const LOTTERYFACTORY_CONTRACT_ADDRESS = "0x57623Ee8e3C8C6AD78103dEcf5eb58A29176CF33";
+const LOTTERYFACTORY_CONTRACT_ADDRESS = import.meta.env.VITE_LOTTERY_FACTORY_ADDRESS;
 
 const formatAddress = (addr: string) =>
     `${addr.slice(0, 4)}...${addr.slice(-4)}`;
@@ -40,10 +40,10 @@ export default function LotteryStatsCard() {
 
         // Step 2: Get deployed contract address
         const lotteryInfo = await contract.getLotteryById(lotteryId);
-        console.log("Lottery Info:", lotteryInfo);
+        // console.log("Lottery Info:", lotteryInfo);
 
         const deployedAddress = lotteryInfo.deployedToContract;
-        console.log("Deployed contract address:", deployedAddress);
+        // console.log("Deployed contract address:", deployedAddress);
 
         setLotteryData({
           lotteryId,
@@ -76,18 +76,17 @@ export default function LotteryStatsCard() {
   }, []);
 
   return (
-    <Card className="w-96 bg-primary/95 shadow-purple-500 shadow-lg">
+    <Card className="w-96 bg-primary/95 shadow-purple-500 shadow-xl mt-5">
       <CardHeader>
-        <CardTitle className="font-tech text-2xl text-blue-500">Current Lottery</CardTitle>
+        <CardTitle className="font-tech text-2xl text-blue-500">Next Lottery</CardTitle>
       </CardHeader>
       <CardContent>
         {lotteryData && ticketPrice ? (
           <>
-            <p className="text-lg font-roboto text-basic">Lottery ID: {lotteryData.lotteryId}</p>
+            {/* <p className="text-lg font-roboto text-basic">Lottery ID: {lotteryData.lotteryId}</p> */}
             <p className="text-lg font-roboto text-basic">Contract: {formatAddress(lotteryData.deployedToContract)}</p>
             <p className="text-lg font-roboto text-basic">Total Tickets: {totalTickets ?? "Loading..."}</p>
             <p className="text-lg font-roboto text-basic">Remaining Tickets: {ticketsRemaining ?? "Loading..."}</p>
-            <p className="text-lg font-roboto text-basic">Ticket Price: {ticketPrice ?? "Loading..."} ETH</p>
             <p className="text-lg font-roboto text-basic">Current Jackpot: {prizePool ?? "Loading..."} ETH</p>
             <BuyTicketsBtn contractAddress={lotteryData.deployedToContract} ticketPrice={ticketPrice} />
           </>

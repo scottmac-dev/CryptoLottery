@@ -99,6 +99,8 @@ contract Lottery {
         payable(owner).transfer(adminAmount); // Send 5% to the owner
 
         emit FundsDistributed(winnerAddr); // Emit event for funds distribution
+        lotteryFactory.setWinner(lotteryId, winnerAddr);
+
     }
 
     // Query functions
@@ -169,6 +171,10 @@ contract Lottery {
 
     function getLotteryId() public view returns(uint){
         return lotteryId;
+    }
+
+    function getAllTicketHolders() public view returns (address[] memory) {
+        return ticketHolders;
     }
 
     // Allows contract to receive ether with no data.

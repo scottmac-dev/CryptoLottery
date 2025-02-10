@@ -7,7 +7,7 @@ SEPOLIA_PRIVATE_KEY= process.env.SEPOLIA_PRIVATE_KEY;
 
 const RPC_URL = ALCHEMY_SEPOLIA_URL; // Replace with your Alchemy/Infura URL
 const PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY; // Store your private key in a .env file for security
-const CONTRACT_ADDRESS = "0x57623Ee8e3C8C6AD78103dEcf5eb58A29176CF33"; // Deployed contract address
+const CONTRACT_ADDRESS = process.env.FACTORY_ADDRESS; // Deployed contract address
 
 const ABI = [
   "function createNewLottery(uint ticketSupply, uint ticketPrice) public returns(uint, address)"
@@ -38,12 +38,6 @@ async function createLottery(ticketSupply, ticketPrice) {
     const receipt = await tx.wait();
     console.log(`Transaction confirmed in block: ${receipt?.blockNumber}`);
 
-    // Extract the emitted event data (lotteryId & deployed address)
-    if (receipt.logs.length > 0) {
-      const log = receipt.logs[0]; // First log should be the LotteryCreated event
-      console.log(`New Lottery ID: ${log.args?.[0]}`);
-      console.log(`Deployed to Address: ${log.args?.[1]}`);
-    }
   } catch (error) {
     console.error("Error creating lottery:", error);
   }

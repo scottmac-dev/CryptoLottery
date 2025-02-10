@@ -105,8 +105,16 @@
   color: #F7F9FC;
 }
 
+.text-highlight{
+  color: #FFD700;
+}
+
 .bg-call {
   background-color: #4CAF50 ;
+}
+
+.bg-highlight {
+  background-color: #FFEA70;
 }
 
 .text-basic {

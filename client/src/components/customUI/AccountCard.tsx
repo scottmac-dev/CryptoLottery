@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import lotteryFactoryAbi from "../../utils/LotteryFactory.json"; // Factory ABI
 import lotteryAbi from "../../utils/Lottery.json"; // Individual Lottery ABI
 
-const LOTTERYFACTORY_CONTRACT_ADDRESS = "0x57623Ee8e3C8C6AD78103dEcf5eb58A29176CF33";
+const LOTTERYFACTORY_CONTRACT_ADDRESS = import.meta.env.VITE_LOTTERY_FACTORY_ADDRESS;
 
 const alchemy = new Alchemy({
   apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
@@ -39,36 +39,40 @@ export default function AccountCard() {
 
   useEffect(() => {
     if (!account) return;
-
+  
     const fetchTickets = async () => {
       try {
-        const provider = new ethers.JsonRpcProvider(import.meta.env.VITE_ALCHEMY_SEPOLIA_URL); // Use Alchemy or Infura
+        const provider = new ethers.JsonRpcProvider(import.meta.env.VITE_ALCHEMY_SEPOLIA_URL);
         const contract = new ethers.Contract(LOTTERYFACTORY_CONTRACT_ADDRESS, lotteryFactoryAbi.abi, provider);
-
-        // Get the latest lottery ID
+  
         const returnedId = await contract.getLotteryCount();
         const lotteryId = Number(returnedId);
-
-        // Get info about its deployment
+  
         const lotteryInfo = await contract.getLotteryById(lotteryId);
         const deployedAddress = lotteryInfo.deployedToContract;
-
-        // Step 3: Query deployed Lottery contract
+  
         const lotteryContract = new ethers.Contract(deployedAddress, lotteryAbi.abi, provider);
-        const ticketsOwnedByAccount = await lotteryContract.getAddressTicketAmount(account);
-        const totalSupply = await lotteryContract.getTicketSupply();
-
-        // Update state with tickets data
-        setCurrentTickets(Number(ticketsOwnedByAccount));
-        setTotalTickets(Number(totalSupply));
-
-        // Calculate win chance in a separate function after data is fetched
-        calculateWinChance(Number(ticketsOwnedByAccount), Number(totalSupply));
+        let ticketsOwnedByAccount = await lotteryContract.getAddressTicketAmount(account);
+        let totalSupply = await lotteryContract.getTicketSupply();
+  
+        // Ensure values default to 0 if undefined or null
+        ticketsOwnedByAccount = Number(ticketsOwnedByAccount) || 0;
+        totalSupply = Number(totalSupply) || 0;
+  
+        setCurrentTickets(ticketsOwnedByAccount);
+        setTotalTickets(totalSupply);
+  
+        calculateWinChance(ticketsOwnedByAccount, totalSupply);
       } catch (error) {
         console.error("Error fetching tickets:", error);
+        
+        // If there's an error, ensure it doesn't remain in "Loading..."
+        setCurrentTickets(0);
+        setTotalTickets(0);
+        setWinChance(0);
       }
     };
-
+  
     fetchTickets();
   }, [account]);
 
@@ -86,7 +90,7 @@ export default function AccountCard() {
     `${addr.slice(0, 4)}...${addr.slice(-4)}`;
 
   return (
-    <Card className="w-96 bg-primary/95 shadow-blue-500 shadow-lg">
+    <Card className="w-96 bg-primary/95 shadow-blue-500 shadow-xl mt-5">
       <CardHeader>
         <CardTitle className="font-tech text-2xl text-blue-500 ">Wallet Details</CardTitle>
       </CardHeader>

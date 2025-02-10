@@ -9,6 +9,7 @@ import "./Lottery.sol"; // Import the LotteryToken contract
 contract LotteryFactory {
     address public immutable owner; // immutable owner address is contract creator
     mapping(uint => DeployedLottery) public deployedLotteries; // tracks deployed lotteries and their state
+    mapping(uint => address) public winnerAddresses;
     uint public idCounter; // sequential id labeling of lotteries created
 
     event LotteryCreated(uint indexed lotteryId, address owner, uint createdAt);
@@ -44,6 +45,10 @@ contract LotteryFactory {
 
     function setLotteryWinState(uint _lotteryId) onlyChildren() external {
         deployedLotteries[_lotteryId].winnerAnnounced = true;
+    }
+
+    function setWinner(uint _lotteryId, address winner) onlyChildren() external {
+        winnerAddresses[_lotteryId] = winner;
     }
 
     function getLotteryById(uint _lotteryId) public view returns(DeployedLottery memory lotteryInstance){
