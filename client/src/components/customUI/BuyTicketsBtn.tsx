@@ -2,31 +2,35 @@ import { useState } from "react";
 import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import lotteryAbi from "../../utils/Lottery.json"; // Individual Lottery ABI
+import { toast } from "sonner"; 
+import lotteryAbi from "../../utils/Lottery.json"; 
 
 const lotteryABI = lotteryAbi.abi;
 
-export default function BuyTicketsBtn({ contractAddress, ticketPrice }:{contractAddress: string; ticketPrice: string}) {
+export default function BuyTicketsBtn({ contractAddress, ticketPrice }: { contractAddress: string; ticketPrice: string }) {
   const [amount, setAmount] = useState(1);
   const [loading, setLoading] = useState(false);
 
   const handleBuyTickets = async () => {
     if (!window.ethereum) {
-      alert("Metamask is required to buy tickets");
+      toast.error("MetaMask is required, Please connect wallet.", {
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });
       return;
     }
 
     try {
       setLoading(true);
-
-      // Request account access if not already connected
+      // Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       if (!accounts || accounts.length === 0) {
-        alert("Please connect your MetaMask wallet.");
-        return;
+        toast.error("MetaMask is required, Please connect wallet.", {
+          className: "bg-primary text-white shadow-md p-4 rounded-lg",
+        });        
+      return;
       }
 
-      // Set up the Ethereum provider and signer
+      // Set up provider and signer
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, lotteryABI, signer);
@@ -34,24 +38,35 @@ export default function BuyTicketsBtn({ contractAddress, ticketPrice }:{contract
       // Calculate total price: ticketPrice * amount
       const totalPrice = ethers.parseEther((parseFloat(ticketPrice) * amount).toString());
 
-      // Check if the contract function exists and call it
       if (contract && contract.buyTicket) {
-        console.log(`Attempting to buy ${amount} tickets for ${totalPrice.toString()}...`);
+        toast.loading(`Buying ${amount} tickets for ${ethers.formatEther(totalPrice)} ETH...`);
+
         const tx = await contract.buyTicket(amount, { value: totalPrice });
         await tx.wait();
-        console.log("Transaction successful with hash:", tx.hash);
-        alert("Purchase successful!");
-        window.location.href = "/";
+
+        toast.success("Purchase Successful! 🎉", {
+          description: `Transaction Hash: ${tx.hash}`,
+          className: "bg-primary text-white shadow-md p-4 rounded-lg",
+        });
+
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 3000); 
+
       } else {
-        console.error("Contract method not available.");
-        alert("Purchase failed. Contract method unavailable.");
+        toast.error("Contract method unavailable. Purchase failed ❌.",{
+          className: "bg-primary text-white shadow-md p-4 rounded-lg",
+        });
       }
     } catch (error) {
-      console.error("Transaction failed:", error);
-      alert("Purchase failed");
+      console.error("Transaction failed ❌:", error,{
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });
+      toast.error("Purchase failed ❌. Check console for details.",{
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });
     } finally {
       setLoading(false);
-      window.location
     }
   };
 

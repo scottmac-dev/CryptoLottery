@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { ethers } from "ethers";
 import { Button } from "@/components/ui/button"; // Adjust import path as needed
 import { useWallet } from "@/context/WalletContext";
+import { toast } from "sonner"; // Import Sonner toast notifications
+
 
 declare global {
   interface Window {
@@ -27,15 +29,24 @@ export default function MetaMaskConnect() {
 
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert("MetaMask is not installed");
-      return;
+      toast.error("MetaMask is required, Please connect wallet.", {
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });      return;
     }
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      setAccount(await signer.getAddress());
+      const address = await signer.getAddress();
+      setAccount(address);
+      toast.success("Connetion Successful! 🎉", {
+        description: `Connected to wallet: ${address}`,
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });
     } catch (error) {
-      console.error("Connection failed", error);
+      console.error("Connection failed ❌:",{
+        decription: error,
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });
     }
   };
 
