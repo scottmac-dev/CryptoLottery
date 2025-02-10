@@ -87,7 +87,7 @@ const copyToClipboard = (address: string) => {
     };
 
   return (
-    <div className="flex flex-col mt-5 items-center mb-5 font-roboto">
+    <div className="flex flex-col mt-5 items-center mb-10 font-roboto">
         <h3 className="font-tech text-3xl text-blue-500">Previous Lotteries</h3>
         <p className="text-lg font-roboto text-primary mt-2 text-center max-w-2xl ml-3 mr-3">
           Use the selector below to find information about previous lotteries!
@@ -107,9 +107,10 @@ const copyToClipboard = (address: string) => {
           </select>
 
           {loading ? (
-            <div className="flex justify-center items-center">
-              <FaSpinner size={"50px"} className="text-blue-500" />
-            </div>
+          <div className="flex justify-center items-center">
+            <FaSpinner size={50} className="text-blue-500 animate-spin" />
+          </div>
+
           ) : selectedLotteryData ? (
           <div>
               {/* Contract Address with Copy Button */}

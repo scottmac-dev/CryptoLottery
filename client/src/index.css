@@ -120,3 +120,8 @@
 .text-basic {
   font-style: #F7F9FC ;
 }
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
