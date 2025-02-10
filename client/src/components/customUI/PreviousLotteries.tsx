@@ -81,16 +81,13 @@ export default function PreviousLotteries() {
 // Copy address to clipboard
 const copyToClipboard = (address: string) => {
     navigator.clipboard.writeText(address)
-        .then(() => {
-        alert('Address copied to clipboard!');
-        })
         .catch((error) => {
         console.error('Failed to copy address:', error);
         });
     };
 
   return (
-    <div className="flex flex-col mt-5 items-center">
+    <div className="flex flex-col mt-5 items-center mb-5 font-roboto">
         <h3 className="font-tech text-3xl text-blue-500">Previous Lotteries</h3>
         <p className="text-lg font-roboto text-primary mt-2 text-center max-w-2xl ml-3 mr-3">
           Use the selector below to find information about previous lotteries!
@@ -114,7 +111,7 @@ const copyToClipboard = (address: string) => {
               <FaSpinner size={"50px"} className="text-blue-500" />
             </div>
           ) : selectedLotteryData ? (
-<div>
+          <div>
               {/* Contract Address with Copy Button */}
               <div className="mb-4">
                 <p>
@@ -133,7 +130,7 @@ const copyToClipboard = (address: string) => {
               </div>
 
               {/* Ticket Holders Table */}
-              <h3 className="font-semibold">Ticket Holders:</h3>
+              <h3 className="font-semibold">Ticket Holders Table:</h3>
               {ticketHolders.length > 0 ? (
                 <table className="min-w-full table-auto mt-4">
                   <thead>

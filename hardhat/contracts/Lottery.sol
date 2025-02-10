@@ -20,6 +20,7 @@ contract Lottery {
     LotteryFactory public lotteryFactory; // Reference to the LotteryFactory contract
     uint public ticketPrice; // ticket price in Wei
     bool public winnerChosen;
+    uint public winnersTicketNum;
 
     // Events
     event TicketSale(uint amount, address indexed buyer);
@@ -67,7 +68,7 @@ contract Lottery {
     }
 
     // Pick winner
-    function pickWinner(uint randomTicketNumber) external view onlyOwner() returns(address, uint) {
+    function pickWinner(uint randomTicketNumber) external view onlyOwner returns(address, uint) {
         // Ensure all tickets sold
         require(allTicketsSold(), "Cannot call, tickets still remaining");
         address winner = tickets.returnTicketOwner(randomTicketNumber); // Get the owner of the ticket number
@@ -77,15 +78,16 @@ contract Lottery {
         return (winner, randomTicketNumber);
     }
 
-    function callWinner(address winnerAddr, uint ticketNum) external onlyOwner(){
+    function callWinner(address winnerAddr, uint ticketNum) external onlyOwner{
         require(allTicketsSold(), "Cannot call while tickets outstanding");
         winnerChosen = true;
+        winnersTicketNum = ticketNum;
         emit WinnerDrawn(winnerAddr, ticketNum); // Emit event for winner
         lotteryFactory.setLotteryWinState(lotteryId);
     }
 
     // Allocate funds
-    function allocateFunds(address winnerAddr) external onlyOwner() payable{
+    function allocateFunds(address winnerAddr) external onlyOwner{
         // Verify checks
         require(allTicketsSold(), "Cannot call while tickets outstanding");
         require(winnerChosen, "Cannot allocate before winner is picked");
@@ -149,6 +151,11 @@ contract Lottery {
     // Return owners address
     function getOwnerAddress() public view returns(address){
         return owner;
+    }
+
+    function getWinningTicketNum() public view returns(uint){
+        require(winnerChosen);
+        return winnersTicketNum;
     }
 
     // Get owners address of a ticket number

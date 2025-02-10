@@ -5,8 +5,7 @@ import{
 import Home from './components/pages/Home';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
-import { useState } from 'react';
-import { WalletProvider } from './context/WalletContext';
+
 
 const router = createBrowserRouter([
   {

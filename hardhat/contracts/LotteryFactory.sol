@@ -25,7 +25,7 @@ contract LotteryFactory {
         owner = msg.sender;
     }
 
-    function createNewLottery(uint ticketSupply, uint ticketPrice) public onlyOwner() returns(uint, address) {
+    function createNewLottery(uint ticketSupply, uint ticketPrice) public onlyOwner returns(uint, address) {
         idCounter += 1; // Increment the idCounter for lottery creation.
         // Create a new Lottery contract instance
         Lottery newLottery = new Lottery(ticketSupply, idCounter, ticketPrice, owner);
@@ -43,11 +43,11 @@ contract LotteryFactory {
         return (idCounter, address(newLottery));
     }
 
-    function setLotteryWinState(uint _lotteryId) onlyChildren() external {
+    function setLotteryWinState(uint _lotteryId) onlyChildren external {
         deployedLotteries[_lotteryId].winnerAnnounced = true;
     }
 
-    function setWinner(uint _lotteryId, address winner) onlyChildren() external {
+    function setWinner(uint _lotteryId, address winner) onlyChildren external {
         winnerAddresses[_lotteryId] = winner;
     }
 
@@ -59,16 +59,16 @@ contract LotteryFactory {
         return idCounter;
     }
 
-    function getOwnerAddress() public onlyOwner() view returns(address){
+    function getOwnerAddress() public onlyOwner view returns(address){
         return owner;
     }
 
-    modifier onlyOwner() {
+    modifier onlyOwner {
         require(msg.sender == owner, "Only owner can call");
         _;
     }
 
-    modifier onlyChildren() {
+    modifier onlyChildren {
         bool isChildContract;
          for(uint i = 1; i <= idCounter; i++){
             if(deployedLotteries[i].deployedToContract == msg.sender){
