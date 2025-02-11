@@ -4,60 +4,82 @@ require("dotenv").config();
 // Set environment variables
 const ALCHEMY_SEPOLIA_URL = process.env.ALCHEMY_SEPOLIA_URL;
 const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY;
+const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS;
 
-const RPC_URL = ALCHEMY_SEPOLIA_URL;
-const PRIVATE_KEY = SEPOLIA_PRIVATE_KEY;
-const CONTRACT_ADDRESS = process.env.FACTORY_ADDRESS;
+const FACTORY_CONTRACT = require("../artifacts/contracts/LotteryFactory.sol/LotteryFactory.json");
+const LOTTERY_CONTRACT = require("../artifacts/contracts/Lottery.sol/Lottery.json");
 
-const ABI = [
-  "function getLotteryCount() public view returns(uint)",
-  "function getLotteryById(uint _lotteryId) public view returns((uint lotteryId, address deployedToContract, bool winnerAnnounced, uint createdAt))",
-  "function pickWinner(uint randomTicketNumber) external view onlyOwner() returns(address, uint)",
-  "function allocateFunds(address winnerAddr) external onlyOwner() payable",
-  "function callWinner(address winnerAddr, uint ticketNum) external onlyOwner()"
-];
+const factoryABI = FACTORY_CONTRACT.abi;
+const lotteryABI = LOTTERY_CONTRACT.abi;
+
 
 async function main() {
-  // Connect to the provider (Alchemy or another RPC)
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
+  // 1️⃣ Connect to Sepolia network using Alchemy provider
+  const provider = new ethers.JsonRpcProvider(ALCHEMY_SEPOLIA_URL);
+  const wallet = new ethers.Wallet(SEPOLIA_PRIVATE_KEY, provider);
 
-  // Set the signer (owner's private key)
-  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+  console.log("Connected to wallet:", wallet.address);
 
-  // Connect to the LotteryFactory contract
-  const factoryContract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
+  // 2️⃣ Attach to the Factory Contract
+  const factoryContract = new ethers.Contract(FACTORY_ADDRESS, factoryABI, wallet);
+  console.log("Connected to Factory Contract:", factoryContract.target);
 
-  // Fetch the most recent lottery id
-  const lotteryCount = await factoryContract.getLotteryCount();
-  const lotteryId = lotteryCount; // Assuming we want the latest created lottery
+  // 3️⃣ Get the deployed Lottery contract address
+  const lotteryId = await factoryContract.getLotteryCount();
+  const lotteryStruct = await factoryContract.getLotteryById(lotteryId);
+  const lotteryAddress = lotteryStruct.deployedToContract;
+  console.log("Latest deployed Lottery Contract Address:", lotteryAddress);
 
-  // Get the lottery details by ID
-  const lotteryDetails = await factoryContract.getLotteryById(lotteryId);
-  const lotteryAddress = lotteryDetails.deployedToContract; // The address of the lottery contract
+  // 4️⃣ Connect to the deployed Lottery Contract
+  const lotteryContract = new ethers.Contract(lotteryAddress, lotteryABI, wallet);
+  console.log("Connected to Lottery Contract:", lotteryAddress);
 
-  console.log(`Lottery address: ${lotteryAddress}`);
+  // 5️⃣ Call functions on the lottery contract as the owner
+  const owner = await lotteryContract.owner();
+  console.log("Lottery contract owner:", owner);
 
-  // Now connect to the deployed Lottery contract
-  const lotteryContract = new ethers.Contract(lotteryAddress, [
-    "function pickWinner(uint randomTicketNumber) external view onlyOwner() returns(address, uint)",
-    "function allocateFunds(address winnerAddr) external onlyOwner() payable",
-    "function callWinner(address winnerAddr, uint ticketNum) external onlyOwner()"
-  ], wallet);
+  // Call functions to test allocation of funds
 
-  // Random ticket number to pick a winner (this should be generated or passed in your logic)
-  const randomTicketNumber = 5;
+  console.log("Checking contract balance...")
+  const balanceBefore = await lotteryContract.getContractETHBalance();
+  console.log("Balance before: ", balanceBefore);
 
-  // Pick winner (should be executed by the owner)
-  const [winnerAddress, winningTicketNumber] = await lotteryContract.pickWinner(randomTicketNumber);
-  console.log(`Winner: ${winnerAddress} with ticket number ${winningTicketNumber}`);
+  // Get supply for randomizer
+  console.log("Generating random ticket num...")
+  const supply = lotteryContract.getTicketSupply();
+  const randomTicketNum = Math.floor(Number(supply) * Math.random()) + 1.
 
-  // Allocate funds (this also must be done by the owner)
-  await lotteryContract.allocateFunds(winnerAddress);  // No value needed as contract handles allocation
-  console.log(`Funds allocated to ${winnerAddress}`);
+  console.log("Picking winner...")
+  await lotteryContract.pickWinner(randomTicketNum);
+  console.log("Pick winner success:")
 
-  // Call winner function to finalize the process (this is also an owner function)
-  await lotteryContract.callWinner(winnerAddress, winningTicketNumber);
-  console.log(`Winner process completed for ${winnerAddress}`);
+  console.log("Getting winner address...")
+  const winnerAddress = await lotteryContract.returnTicketOwner(randomTicketNum);
+  console.log("Returned winner addr",winnerAddress);
+
+  console.log("Calling winner...")
+  const tx2 = await lotteryContract.callWinner(winnerAddress, randomTicketNum);
+  await tx2.wait();
+  console.log("Call winner success:", tx2.hash)
+
+  console.log("Allocating funds...")
+  const tx3 = await lotteryContract.allocateFunds(winnerAddress);
+  await tx3.wait();
+  console.log("Allocate funds success:", tx2.hash)
+
+  console.log("Checking contract balance after...");
+  const balanceAfter = await lotteryContract.getContractETHBalance();
+  console.log("Balance after: ", balanceAfter);
+
+  console.log("Checking winner address on factory mapping...");
+  const winnerAddr = await factoryContract.winnerAddresses(lotteryId);
+  console.log("Winner address from factory mapping", winnerAddr);
+
+  console.log("Checking win state...");
+  const updatedStruct = await factoryContract.getLotteryById(lotteryId);
+  console.log("State", updatedStruct.winnerAnnounced);
+
+  console.log("End script...");
 }
 
 // Run the main function

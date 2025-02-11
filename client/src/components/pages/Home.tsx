@@ -52,18 +52,16 @@ function Home() {
               const totalTickets = await lotteryContract.getTicketSupply(); // Assumed to be a number
 
               // Multiply ticket price by total tickets, then apply the 95% payout rate
-              const payoutWei = (ticketPrice * totalTickets) * 0.95; // Perform calculation in plain numbers
+              const payoutWei = BigInt(ticketPrice) * BigInt(totalTickets) * BigInt(95) / BigInt(100);
+              const payoutEth = Number(payoutWei) / 1e18; 
 
               // Add the payout amount to the total
-              payoutAmount += payoutWei;
+              payoutAmount += payoutEth;
             }
           }
 
-          // Convert payout from wei to ETH (10^18 wei = 1 ETH)
-          const payoutEth = payoutAmount / 1e18; // Convert Wei to ETH
-
           // Update state with the total payout as a string (ETH)
-          setTotalPayout(payoutEth.toString()); // Convert to string to pass around
+          setTotalPayout(payoutAmount.toString()); // Convert to string to pass around
           setLoading(false); // Data fetching is complete
         } catch (error) {
           console.error("Error fetching lottery stats:", error);
@@ -128,7 +126,7 @@ function Home() {
             lotteryCount && totalPayout ? (
               <>
                 {/* Conditionally render the cards only if data is available */}
-                <CountStatsCard lotteryCount={lotteryCount} />
+                <CountStatsCard lotteryCount={lotteryCount - 1} />
                 <PayoutStatsCard totalPayout={totalPayout} />
               </>
             ) : (

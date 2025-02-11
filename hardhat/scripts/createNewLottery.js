@@ -44,4 +44,4 @@ async function createLottery(ticketSupply, ticketPrice) {
 }
 
 // Call the function (Example: 100 tickets, 0.01 ETH per ticket)
-createLottery(10, "0.01");
+createLottery(100, "0.001");

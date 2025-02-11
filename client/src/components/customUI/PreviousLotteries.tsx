@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import lotteryFactoryAbi from "../../utils/LotteryFactory.json"; // Factory ABI
 import lotteryAbi from "../../utils/Lottery.json"; // Individual Lottery ABI
 import { FaCopy, FaSpinner } from "react-icons/fa"; // Using react-icons for the loading spinner
+import { toast } from "sonner";
 
 const LOTTERYFACTORY_CONTRACT_ADDRESS = import.meta.env.VITE_LOTTERY_FACTORY_ADDRESS; // Lottery Factory Contract Address
 
@@ -20,6 +21,11 @@ export default function PreviousLotteries() {
   const [selectedLotteryData, setSelectedLotteryData] = useState<{ deployedToContract: string } | null>(null);
   const [ticketHolders, setTicketHolders] = useState<TicketHolder[]>([]); // Array of TicketHolder objects
   const [loading, setLoading] = useState<boolean>(false);
+  const [winnerAddress, setWinnerAddress] = useState<string | null>(null);
+  const [jackpot, setJackpot] = useState<number | null>(null);
+  const [winningTicket, setWinningTicket] = useState<number | null>(null);
+
+
 
   useEffect(() => {
     const fetchLotteryData = async () => {
@@ -33,14 +39,30 @@ export default function PreviousLotteries() {
         const count = await contract.getLotteryCount();
         setLotteryCount(Number(count));
 
+        const _winnerAddress = await contract.winnerAddresses(selectedLotteryId);
+        setWinnerAddress(_winnerAddress);
+
         // Query lottery data for the selected lottery ID
         const lotteryInfo = await contract.getLotteryById(selectedLotteryId);
         setSelectedLotteryData({
           deployedToContract: lotteryInfo.deployedToContract,
         });
         const deployedAddress = lotteryInfo.deployedToContract;
-  
         const lotteryContract = new ethers.Contract(deployedAddress, lotteryAbi.abi, provider);
+
+        // Get ticket price and amount for jackpot calculations.
+        const _ticketSupply = await lotteryContract.getTicketSupply();
+        const _ticketPrice = await lotteryContract.getTicketPrice();
+
+        const winningTicketNum = await lotteryContract.getWinningTicketNum();
+        setWinningTicket(winningTicketNum ?? 0);
+
+        // Convert to BigInt for calculations
+        const payoutWei = BigInt(_ticketPrice) * BigInt(_ticketSupply) * BigInt(95) / BigInt(100);
+        // Convert Wei to ETH as a regular number
+        const payoutEth = Number(payoutWei) / 1e18; 
+        setJackpot(payoutEth);
+
 
         // Fetch ticket holders' addresses
         const _ticketHolders = await lotteryContract.getAllTicketHolders();
@@ -58,13 +80,14 @@ export default function PreviousLotteries() {
             ticketsHeld: Number(ticketsHeld),
           });
         }
-
         // Update the ticketHolders state
         setTicketHolders(updatedTicketHolders);
 
       } catch (error) {
         console.error("Error fetching lottery data:", error);
       } finally {
+        // console.log({ selectedLotteryId, lotteryCount, selectedLotteryData, winnerAddress, jackpot, winningTicket });
+
         setLoading(false); // Set loading state to false when done
       }
     };
@@ -84,6 +107,9 @@ const copyToClipboard = (address: string) => {
         .catch((error) => {
         console.error('Failed to copy address:', error);
         });
+      toast.success("Copied Address!", {
+        className: "bg-primary text-white shadow-md p-4 rounded-lg",
+      });
     };
 
   return (
@@ -93,13 +119,13 @@ const copyToClipboard = (address: string) => {
           Use the selector below to find information about previous lotteries!
         </p>
       {lotteryCount ? (
-        <div className="mt-2">
+        <div className="mt-4">
           <select
             value={selectedLotteryId}
             onChange={handleLotterySelect}
             className="w-full p-2 bg-white rounded-md mb-4"
           >
-            {Array.from({ length: lotteryCount }, (_, i) => i + 1).map((id) => (
+            {Array.from({ length: lotteryCount-1 }, (_, i) => i + 1).map((id) => (
               <option key={id} value={id}>
                 Lottery #{id}
               </option>
@@ -111,11 +137,11 @@ const copyToClipboard = (address: string) => {
             <FaSpinner size={50} className="text-blue-500 animate-spin" />
           </div>
 
-          ) : selectedLotteryData ? (
+          ) : selectedLotteryData && winnerAddress && jackpot && winningTicket ? (
           <div>
               {/* Contract Address with Copy Button */}
               <div className="mb-4">
-                <p>
+                <p className="text-xl">
                   Contract Address:{" "}
                   <span className="text-blue-500">
                     {formatAddress(selectedLotteryData.deployedToContract)}
@@ -127,6 +153,21 @@ const copyToClipboard = (address: string) => {
                   >
                     <FaCopy />
                   </button>
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xl">
+                  Winners Address: {formatAddress(winnerAddress)} 🎊
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xl">
+                  Winning Ticket: {Number(winningTicket)} 🎟️
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-xl">
+                  Paied out jackpot of: {jackpot} ETH 💸
                 </p>
               </div>
 

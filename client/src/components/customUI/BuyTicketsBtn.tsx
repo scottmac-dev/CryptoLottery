@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -10,6 +10,25 @@ const lotteryABI = lotteryAbi.abi;
 export default function BuyTicketsBtn({ contractAddress, ticketPrice }: { contractAddress: string; ticketPrice: string }) {
   const [amount, setAmount] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [ticketsRemaining, setTicketsRemaining] = useState<number | null>(null);
+
+  // Fetch remaining tickets when component mounts
+  useEffect(() => {
+    const fetchTickets = async () => {
+      if (!window.ethereum) return;
+
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(contractAddress, lotteryABI, provider);
+        const _remaining = await contract.getRemainingTickets();
+        setTicketsRemaining(Number(_remaining));
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+      }
+    };
+
+    fetchTickets();
+  }, [contractAddress]);
 
   const handleBuyTickets = async () => {
     if (!window.ethereum) {
@@ -27,7 +46,7 @@ export default function BuyTicketsBtn({ contractAddress, ticketPrice }: { contra
         toast.error("MetaMask is required, Please connect wallet.", {
           className: "bg-primary text-white shadow-md p-4 rounded-lg",
         });        
-      return;
+        return;
       }
 
       // Set up provider and signer
@@ -73,8 +92,11 @@ export default function BuyTicketsBtn({ contractAddress, ticketPrice }: { contra
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="mt-4 w-full bg-blue-500/80 rounded-md text-white hover:bg-blue-600/80">
-          Buy Tickets Now
+        <Button
+          className="mt-4 w-full bg-blue-500/80 rounded-md text-white hover:bg-blue-600/80"
+          disabled={ticketsRemaining === 0} // Disable button if tickets are exhausted
+        >
+          {ticketsRemaining === 0 ? "Allocation Exhausted" : "Buy Tickets Now"}
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-primary text-basic" aria-describedby="dialog for purchasing lottery tickets">
@@ -90,7 +112,7 @@ export default function BuyTicketsBtn({ contractAddress, ticketPrice }: { contra
           onChange={(e) => setAmount(Number(e.target.value))}
           className="border p-2 w-full"
         />
-        <Button onClick={handleBuyTickets} disabled={loading} className="bg-green-500/80 text-white hover:bg-green-600/80 rounded-md">
+        <Button onClick={handleBuyTickets} disabled={loading || ticketsRemaining === 0} className="bg-green-500/80 text-white hover:bg-green-600/80 rounded-md">
           {loading ? "Processing..." : "Confirm Purchase"}
         </Button>
       </DialogContent>
