@@ -167,7 +167,7 @@ const copyToClipboard = (address: string) => {
               </div>
               <div className="mb-4">
                 <p className="text-xl">
-                  Paied out jackpot of: {jackpot} ETH 💸
+                  Paid out jackpot of: {jackpot} ETH 💸
                 </p>
               </div>
 
