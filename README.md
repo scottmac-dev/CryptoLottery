@@ -10,3 +10,5 @@ Running application:
 - npm i for dependencies
 - npm run dev to start app in browser
 - Enjoy :)
+
+* Application is on the Sepolia ETH test net and does not use real ETH currency
