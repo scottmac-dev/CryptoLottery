@@ -46,8 +46,9 @@ async function main() {
 
   // Get supply for randomizer
   console.log("Generating random ticket num...")
-  const supply = lotteryContract.getTicketSupply();
+  const supply = await lotteryContract.getTicketSupply();
   const randomTicketNum = Math.floor(Number(supply) * Math.random()) + 1.
+  console.log(randomTicketNum);
 
   console.log("Picking winner...")
   await lotteryContract.pickWinner(randomTicketNum);
