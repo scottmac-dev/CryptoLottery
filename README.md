@@ -4,6 +4,12 @@ Prize money is pooled on a smart contract and a winner is drawn after a specific
 Funds are then distributed to the winners accounts.
 Provides a user interface to display ticket sales and owners providing transperancy on chances of winning and ticket distribution.
 
+Requiremnts:
+- Code editor
+- Node js
+- MetaMask browser extension
+- Sepolia test ETH
+
 Running application:
 - Clone repo
 - cd into client folder. cd/client
