@@ -1,6 +1,7 @@
 # CryptoLottery
 ## Scope
 Submission project to reveive my Alchemy University EVM Chain Certification.
+
 Technology Stack:
 - React/Vite user interface
 - Tailwind CSS styling
