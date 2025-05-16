@@ -11,7 +11,8 @@ Technology Stack:
 - JavaScript deployment scripts
 - Alchemy SDK
 - Ethers.js & Metamask integration
-Skills:
+
+Skills developed:
 - Smart contract development, testing and deployment
 - Solidity programming language
 - Typescript react development
